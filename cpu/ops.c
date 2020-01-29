@@ -273,7 +273,6 @@ static void bpl(operand_t operand)
 /* BRA: Branch always */
 static void bra(operand_t operand)
 {
-    (void)operand;
     reg.pc = addr(operand);
 }
 
