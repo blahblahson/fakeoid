@@ -1,6 +1,22 @@
+#include "../core/bus.h"
 #include "cpu.h"
 
 #define STACK(a) ((uint8_t)(0xFF + a))
+
+/* FIXME: Temporary util functions */
+static void cpu_bus_addr_set(uint16_t addr)
+{
+    for (int i = 0; i < 16; i++) {
+            pin_set(&cpu_addr_bus[i], addr & BIT(i));
+    }
+}
+
+static void cpu_bus_data_set(uint8_t addr)
+{
+        for (int i = 0; i < 8; i++) {
+                pin_set(&cpu_data_bus[i], addr & BIT(i));
+        }
+}
 
 /*
  * Memory access functions
@@ -9,7 +25,27 @@
  */
 uint8_t mem_read(addr_t addr)
 {
-    return mem[addr];
+    uint8_t word = 0;
+
+    for (int i = 0; i < 16; i++)
+            pin_set(&cpu_addr_bus[i], addr & BIT(i));
+
+    /* yield */
+
+    /*
+     * The idea here is to block on a conditional variable related to the state
+     * of the input clock. The core should block on the completion of all
+     * modules before advancing the clocks.
+     *
+     * Another thought - This conditional variable could be defined in terms of
+     * pin state.
+     */
+
+    for (int i = 0; i < 8; i++)
+            word |= pin_evaluate(&cpu_data_bus[i]) >> i;
+
+    return word;
+    /* return mem[addr]; */
 }
 
 void mem_write(addr_t addr, word_t word)
